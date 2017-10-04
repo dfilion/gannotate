@@ -9,18 +9,21 @@ for use in Grafana.
 
 ```
 Usage of send-annotate:
+  -Tags string
+        Comma separated list of InfluxDB tags (in progress). 
   -db string
-        Database name (default "annotations")
+        InfluxDB database name (default "annotations")
   -desc descr
-        Annotation description. Saved to descr field.
+        Annotation description. Saved to the descr field.
   -host string
         InfluxDB server URL. (default "http://localhost:8086")
   -m string
-        Measurement written to. (default "events")
-  -tags string
-        Comma separated list of tags.
+        InfluxDb measurement name. (default "events")
+  -tags tags
+        Comma separated list of annotation tags. Saved to the tags field.
   -title title
-        Annotation title. Saved to title field.
+        Annotation title. Saved to the title field.
+
 ```
 
 ### Grafana

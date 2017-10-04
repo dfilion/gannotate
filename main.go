@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	//"strings"
 	"time"
 
 	"github.com/influxdata/influxdb/client/v2"
@@ -11,12 +12,13 @@ import (
 
 // Settings is a structure containing the values passed as commandline parameters.
 type Settings struct {
-	host        string // InfluxDB Host
-	db          string // Database to write to
-	measurement string // Measurement name to write to
-	title       string // Annotation title
-	descr       string // Annotation description
-	tags        string // Annotation tags
+	host             string // InfluxDB Host
+	db               string // Database to write to
+	measurement      string // Measurement name to write to
+	tags             string // InfluxDB tags
+	annotation_title string // Annotation title
+	annotation_descr string // Annotation description
+	annotation_tags  string // Annotation tags
 }
 
 // dbexists returns a boolean indicating if the name exists.
@@ -43,15 +45,15 @@ func main() {
 	var settings Settings
 
 	flag.StringVar(&settings.host, "host", "http://localhost:8086", "InfluxDB server URL.")
-	flag.StringVar(&settings.db, "db", "annotations", "Database name")
-	flag.StringVar(&settings.measurement, "m", "events", "Measurement written to.")
-	flag.StringVar(&settings.title, "title", "", "Annotation title. Saved to `title` field.")
-	flag.StringVar(&settings.descr, "desc", "", "Annotation description. Saved to `descr` field.")
-	flag.StringVar(&settings.tags, "tags", "", "Comma separated list of tags.")
+	flag.StringVar(&settings.db, "db", "annotations", "InfluxDB database name")
+	flag.StringVar(&settings.measurement, "m", "events", "InfluxDb measurement name.")
+	flag.StringVar(&settings.annotation_title, "title", "", "Annotation title. Saved to the `title` field.")
+	flag.StringVar(&settings.annotation_descr, "desc", "", "Annotation description. Saved to the `descr` field.")
+	flag.StringVar(&settings.annotation_tags, "tags", "", "Comma separated list of annotation tags. Saved to the `tags` field.")
+	flag.StringVar(&settings.tags, "Tags", "", "Comma separated list of InfluxDB tags.")
 	flag.Parse()
 	if !flag.Parsed() {
 		flag.PrintDefaults()
-		fmt.Println("Writes to the ")
 	}
 
 	// Connect
@@ -89,11 +91,12 @@ func main() {
 	// Create a data Point
 	//tags := map[string]string{"aTag": "aVal", "bTag": "bVal"}
 	tags := map[string]string{} // Annotations do not support influxdb style tags
+	//tags := strings.Split(settings.tags, ",")
 
 	fields := map[string]interface{}{
-		"title": settings.title,
-		"descr": settings.descr,
-		"tags":  settings.tags,
+		"title": settings.annotation_title,
+		"descr": settings.annotation_descr,
+		"tags":  settings.annotation_tags,
 	}
 
 	pt, err := client.NewPoint(settings.measurement, tags, fields, time.Now())
