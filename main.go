@@ -10,6 +10,11 @@ import (
 	"github.com/influxdata/influxdb/client/v2"
 )
 
+var (
+	version string
+	build string
+)
+
 // Settings is a structure containing the values passed as commandline parameters.
 type Settings struct {
 	host             string // InfluxDB Host
@@ -44,15 +49,17 @@ func main() {
 
 	var settings Settings
 
-	flag.StringVar(&settings.host, "host", "http://localhost:8086", "InfluxDB server URL.")
-	flag.StringVar(&settings.db, "db", "annotations", "InfluxDB database name")
+	flag.StringVar(&settings.host, "H", "http://localhost:8086", "InfluxDB server URL.")
+	flag.StringVar(&settings.db, "D", "annotations", "InfluxDB database name")
 	flag.StringVar(&settings.measurement, "m", "events", "InfluxDb measurement name.")
 	flag.StringVar(&settings.annotation_title, "title", "", "Annotation title. Saved to the `title` field.")
 	flag.StringVar(&settings.annotation_descr, "desc", "", "Annotation description. Saved to the `descr` field.")
 	flag.StringVar(&settings.annotation_tags, "tags", "", "Comma separated list of annotation tags. Saved to the `tags` field.")
-	flag.StringVar(&settings.tags, "Tags", "", "Comma separated list of InfluxDB tags.")
+	flag.StringVar(&settings.tags, "T", "", "Comma separated list of key=value InfluxDB tags.")
 	flag.Parse()
 	if !flag.Parsed() {
+		fmt.Println("Version: %s", version)
+		fmt.Println("Build: %s", build)
 		flag.PrintDefaults()
 	}
 
