@@ -4,7 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	//"strings"
+	"strings"
 	"time"
 
 	"github.com/influxdata/influxdb/client/v2"
@@ -12,7 +12,7 @@ import (
 
 var (
 	version string
-	build string
+	build   string
 )
 
 // Settings is a structure containing the values passed as commandline parameters.
@@ -45,6 +45,24 @@ func dbexists(c client.Client, name string) (result bool, err error) {
 	return
 }
 
+// parse_influxdb_tags accepts a string of comma separated key=value pairs and
+// parses them into a map that it returns.
+func parse_influxdb_tags(tags string) (map[string]string, error) {
+
+	var kv map[string]string
+
+	// Initialize the map length bases on the number of key/value pairs
+	kv = make(map[string]string, len(strings.Split(tags, ",")))
+
+	for _, val := range strings.Split(tags, ",") {
+		parts := strings.Split(val, "=")
+		if len(parts) == 2 {
+			kv[parts[0]] = parts[1]
+		}
+	}
+	return kv, nil
+}
+
 func main() {
 
 	var settings Settings
@@ -52,9 +70,9 @@ func main() {
 	flag.StringVar(&settings.host, "H", "http://localhost:8086", "InfluxDB server URL.")
 	flag.StringVar(&settings.db, "D", "annotations", "InfluxDB database name")
 	flag.StringVar(&settings.measurement, "m", "events", "InfluxDb measurement name.")
-	flag.StringVar(&settings.annotation_title, "title", "", "Annotation title. Saved to the `title` field.")
-	flag.StringVar(&settings.annotation_descr, "desc", "", "Annotation description. Saved to the `descr` field.")
-	flag.StringVar(&settings.annotation_tags, "tags", "", "Comma separated list of annotation tags. Saved to the `tags` field.")
+	flag.StringVar(&settings.annotation_title, "t", "", "Annotation title. Saved to the `title` field.")
+	flag.StringVar(&settings.annotation_descr, "d", "", "Annotation description. Saved to the `descr` field.")
+	flag.StringVar(&settings.annotation_tags, "a", "", "Comma separated list of annotation tags. Saved to the `tags` field.")
 	flag.StringVar(&settings.tags, "T", "", "Comma separated list of key=value InfluxDB tags.")
 	flag.Parse()
 	if !flag.Parsed() {
@@ -97,8 +115,9 @@ func main() {
 
 	// Create a data Point
 	//tags := map[string]string{"aTag": "aVal", "bTag": "bVal"}
-	tags := map[string]string{} // Annotations do not support influxdb style tags
+	//tags := map[string]string{} // Annotations do not support influxdb style tags
 	//tags := strings.Split(settings.tags, ",")
+	tags, err := parse_influxdb_tags(settings.tags)
 
 	fields := map[string]interface{}{
 		"title": settings.annotation_title,
