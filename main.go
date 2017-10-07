@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"os"
 	"strings"
 	"time"
 
@@ -11,23 +12,26 @@ import (
 )
 
 var (
-	version string
-	build   string
+	// Version number.  Set in Makefile.
+	Version string
+
+	// Build number. Set in Makefile.
+	Build string
 )
 
 // Settings is a structure containing the values passed as commandline parameters.
 type Settings struct {
-	host             string // InfluxDB Host
-	db               string // Database to write to
-	measurement      string // Measurement name to write to
-	tags             string // InfluxDB tags
-	annotation_title string // Annotation title
-	annotation_descr string // Annotation description
-	annotation_tags  string // Annotation tags
+	host            string // InfluxDB Host
+	db              string // Database to write to
+	measurement     string // Measurement name to write to
+	tags            string // InfluxDB tags
+	annotationTitle string // Annotation title
+	annotationDescr string // Annotation description
+	annotationTags  string // Annotation tags
 }
 
-// dbexists returns a boolean indicating if the name exists.
-func dbexists(c client.Client, name string) (result bool, err error) {
+// dbExists returns a boolean indicating if the name exists.
+func dbExists(c client.Client, name string) (result bool, err error) {
 	qry := client.NewQuery("SHOW DATABASES", "", "")
 	response, err := c.Query(qry)
 	if err != nil {
@@ -45,9 +49,9 @@ func dbexists(c client.Client, name string) (result bool, err error) {
 	return
 }
 
-// parse_influxdb_tags accepts a string of comma separated key=value pairs and
+// parseInfluxdbTags accepts a string of comma separated key=value pairs and
 // parses them into a map that it returns.
-func parse_influxdb_tags(tags string) (map[string]string, error) {
+func parseInfluxdbTags(tags string) (map[string]string, error) {
 
 	var kv map[string]string
 
@@ -63,34 +67,53 @@ func parse_influxdb_tags(tags string) (map[string]string, error) {
 	return kv, nil
 }
 
+func usage(exitCode int) {
+	fmt.Println(`Usage of send-annotate:
+	-D string	InfluxDB database name. Default: annotations
+	-H string	InfluxDB server URL. Default: http://localhost:8086
+	-T string	Comma separated list of key=value InfluxDB tags.
+	-M string	InfluxDb measurement name. Default: events
+	-a tags		Comma separated list of annotation tags. Saved to the tags field.
+	-d descr	Annotation description. Saved to the descr field.
+	-t title	Annotation title. Saved to the title field.
+	`)
+	fmt.Printf("Version: %s\n", Version)
+	fmt.Printf("Build: %s\n", Build)
+	os.Exit(exitCode)
+}
+
 func main() {
 
 	var settings Settings
 
 	flag.StringVar(&settings.host, "H", "http://localhost:8086", "InfluxDB server URL.")
 	flag.StringVar(&settings.db, "D", "annotations", "InfluxDB database name")
-	flag.StringVar(&settings.measurement, "m", "events", "InfluxDb measurement name.")
-	flag.StringVar(&settings.annotation_title, "t", "", "Annotation title. Saved to the `title` field.")
-	flag.StringVar(&settings.annotation_descr, "d", "", "Annotation description. Saved to the `descr` field.")
-	flag.StringVar(&settings.annotation_tags, "a", "", "Comma separated list of annotation tags. Saved to the `tags` field.")
+	flag.StringVar(&settings.measurement, "M", "events", "InfluxDb measurement name.")
+	flag.StringVar(&settings.annotationTitle, "t", "", "Annotation title. Saved to the `title` field.")
+	flag.StringVar(&settings.annotationDescr, "d", "", "Annotation description. Saved to the `descr` field.")
+	flag.StringVar(&settings.annotationTags, "a", "", "Comma separated list of annotation tags. Saved to the `tags` field.")
 	flag.StringVar(&settings.tags, "T", "", "Comma separated list of key=value InfluxDB tags.")
+	flag.Usage = func() { usage(0) }
 	flag.Parse()
 	if !flag.Parsed() {
-		fmt.Println("Version: %s", version)
-		fmt.Println("Build: %s", build)
+		flag.PrintDefaults()
+	}
+
+	if settings.annotationTitle == "" || settings.annotationDescr == "" || settings.annotationTags == "" {
+		fmt.Printf("-t -d  and -a are required\n\n")
 		flag.PrintDefaults()
 	}
 
 	// Connect
-	dbconn_config := client.HTTPConfig{Addr: settings.host}
-	dbconn, err := client.NewHTTPClient(dbconn_config)
+	dbconnConfig := client.HTTPConfig{Addr: settings.host}
+	dbconn, err := client.NewHTTPClient(dbconnConfig)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer dbconn.Close()
 
 	// Create the DB if needed
-	exists, err := dbexists(dbconn, settings.db)
+	exists, err := dbExists(dbconn, settings.db)
 	if !exists {
 		qry := client.NewQuery(fmt.Sprintf("CREATE DATABASE %s", settings.db), "", "")
 		resp, err := dbconn.Query(qry)
@@ -114,15 +137,12 @@ func main() {
 	}
 
 	// Create a data Point
-	//tags := map[string]string{"aTag": "aVal", "bTag": "bVal"}
-	//tags := map[string]string{} // Annotations do not support influxdb style tags
-	//tags := strings.Split(settings.tags, ",")
-	tags, err := parse_influxdb_tags(settings.tags)
+	tags, err := parseInfluxdbTags(settings.tags)
 
 	fields := map[string]interface{}{
-		"title": settings.annotation_title,
-		"descr": settings.annotation_descr,
-		"tags":  settings.annotation_tags,
+		"title": settings.annotationTitle,
+		"descr": settings.annotationDescr,
+		"tags":  settings.annotationTags,
 	}
 
 	pt, err := client.NewPoint(settings.measurement, tags, fields, time.Now())
