@@ -76,15 +76,21 @@ func usage(exitCode int) {
 	-a tags		Comma separated list of annotation tags. Saved to the tags field.
 	-d descr	Annotation description. Saved to the descr field.
 	-t title	Annotation title. Saved to the title field.
+	-v		Print version information then exit.
 	`)
-	fmt.Printf("Version: %s\n", Version)
-	fmt.Printf("Build: %s\n", Build)
+	//fmt.Printf("Version: %s\tBuild: %s\n", Version, Build)
+	printVersionInfo()
 	os.Exit(exitCode)
+}
+
+func printVersionInfo() {
+	fmt.Printf("Version: %s\tBuild: %s\n", Version, Build)
 }
 
 func main() {
 
 	var settings Settings
+	var printVersion bool
 
 	flag.StringVar(&settings.host, "H", "http://localhost:8086", "InfluxDB server URL.")
 	flag.StringVar(&settings.db, "D", "annotations", "InfluxDB database name")
@@ -93,15 +99,21 @@ func main() {
 	flag.StringVar(&settings.annotationDescr, "d", "", "Annotation description. Saved to the `descr` field.")
 	flag.StringVar(&settings.annotationTags, "a", "", "Comma separated list of annotation tags. Saved to the `tags` field.")
 	flag.StringVar(&settings.tags, "T", "", "Comma separated list of key=value InfluxDB tags.")
+	flag.BoolVar(&printVersion, "v", false, "Print usage information then exit.")
 	flag.Usage = func() { usage(0) }
 	flag.Parse()
 	if !flag.Parsed() {
 		flag.PrintDefaults()
 	}
 
+	if printVersion {
+		printVersionInfo()
+		os.Exit(0)
+	}
+
 	if settings.annotationTitle == "" || settings.annotationDescr == "" || settings.annotationTags == "" {
-		fmt.Printf("-t -d  and -a are required\n\n")
-		flag.PrintDefaults()
+		fmt.Printf("error: -t -d  and -a are required\n\n")
+		usage(1)
 	}
 
 	// Connect
@@ -123,7 +135,6 @@ func main() {
 		if resp.Error() != nil {
 			log.Fatal(resp.Error())
 		}
-		fmt.Println(resp)
 	}
 
 	// Create a Point Batch
