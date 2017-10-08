@@ -1,12 +1,12 @@
-# send-annotate
+# write-annotate
 
-`send-annotate` is a command line tool written in Go for sending annotations
+`write-annotate` is a command line tool written in Go for sending annotations
 to InfluxDB for use with Grafana.
 
 ## Usage Summary
 
 ```
-Usage of send-annotate:
+Usage of write-annotate:
         -D string       InfluxDB database name. Default: annotations
         -H string       InfluxDB server URL. Default: http://localhost:8086
         -T string       Comma separated list of key=value InfluxDB tags.
@@ -56,7 +56,7 @@ Print the applications version information and exit.
 
 ### Create an annotation using the default InfluxDB settings.
 ```
-send-annotate -t aTitle1 -d aDesc1 -a aTag1,aTag2
+write-annotate -t aTitle1 -d aDesc1 -a aTag1,aTag2
 ```
 
 What gets created.
@@ -96,7 +96,7 @@ and not InfluxDB tags.
 This example includes an InfluxDB tag along with the other information.
 
 ```
-send-annotate -t aTitle2 -d aDesc2 -a aTag3,aTag4 -T host=host2.domain.com
+write-annotate -t aTitle2 -d aDesc2 -a aTag3,aTag4 -T host=host2.domain.com
 ```
 
 The results.
@@ -122,7 +122,7 @@ time                descr  host             tags        title
 
 Grafana cannot display InfluxDB tags in annotations.  Instead it looks for
 tags in a dedicated field in a comma separated format.  This is why
-`send-annotate` puts the annotation tags in a field.
+`write-annotate` puts the annotation tags in a field.
 
 The following example is a query to retrieve all the annotations from InfluxDB.
 
@@ -137,7 +137,7 @@ SELECT title, descr, tags from events WHERE $timeFilter order by asc
 
 You can use the Makefile or the standard `go get; go install` combination.
 
-Go versions 1.8.x and 1.9.x has both been successfully used to build `send-annotate`.
+Go versions 1.8.x and 1.9.x has both been successfully used to build `write-annotate`.
 
 ### Dependencies
 
