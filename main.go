@@ -68,7 +68,7 @@ func parseInfluxdbTags(tags string) (map[string]string, error) {
 }
 
 func usage(exitCode int) {
-	fmt.Println(`Usage of send-annotate:
+	fmt.Println(`Usage of write-annotate:
 	-D string	InfluxDB database name. Default: annotations
 	-H string	InfluxDB server URL. Default: http://localhost:8086
 	-T string	Comma separated list of key=value InfluxDB tags.
