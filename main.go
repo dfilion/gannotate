@@ -23,6 +23,8 @@ var (
 type Settings struct {
 	host            string // InfluxDB Host
 	db              string // Database to write to
+	username        string // InfluxDB user
+	password        string // InfluxDB user's password
 	measurement     string // Measurement name to write to
 	tags            string // InfluxDB tags
 	annotationTitle string // Annotation title
@@ -69,14 +71,16 @@ func parseInfluxdbTags(tags string) (map[string]string, error) {
 
 func usage(exitCode int) {
 	fmt.Println(`Usage of gannotate:
-	-D string	InfluxDB database name. Default: annotations
-	-H string	InfluxDB server URL. Default: http://localhost:8086
-	-T string	Comma separated list of key=value InfluxDB tags.
-	-M string	InfluxDb measurement name. Default: events
-	-a tags		Comma separated list of annotation tags. Saved to the tags field.
-	-d descr	Annotation description. Saved to the descr field.
-	-t title	Annotation title. Saved to the title field.
-	-v		Print version information then exit.
+	-D string   InfluxDB database name. Default: annotations
+	-H string   InfluxDB server URL.Default: http://localhost:8086
+	-U username User name to authenticate with.
+	-P password Username's password.
+	-T string   Comma separated list of key=value InfluxDB tags.
+	-M string   InfluxDb measurement name. Default: events
+	-a tags	    Comma separated list of annotation tags. Saved to the tags field.
+	-d descr    Annotation description. Saved to the descr field.
+	-t title    Annotation title. Saved to the title field.
+	-v          Print version information then exit.
 	`)
 	//fmt.Printf("Version: %s\tBuild: %s\n", Version, Build)
 	printVersionInfo()
@@ -92,13 +96,15 @@ func main() {
 	var settings Settings
 	var printVersion bool
 
-	flag.StringVar(&settings.host, "H", "http://localhost:8086", "InfluxDB server URL.")
-	flag.StringVar(&settings.db, "D", "annotations", "InfluxDB database name")
-	flag.StringVar(&settings.measurement, "M", "events", "InfluxDb measurement name.")
-	flag.StringVar(&settings.annotationTitle, "t", "", "Annotation title. Saved to the `title` field.")
-	flag.StringVar(&settings.annotationDescr, "d", "", "Annotation description. Saved to the `descr` field.")
-	flag.StringVar(&settings.annotationTags, "a", "", "Comma separated list of annotation tags. Saved to the `tags` field.")
-	flag.StringVar(&settings.tags, "T", "", "Comma separated list of key=value InfluxDB tags.")
+	flag.StringVar(&settings.host, "H", "http://localhost:8086", "InfluxDB URL.")
+	flag.StringVar(&settings.db, "D", "annotations", "Database name.")
+	flag.StringVar(&settings.username, "U", "", "Username.")
+	flag.StringVar(&settings.password, "P", "", "Password.")
+	flag.StringVar(&settings.measurement, "M", "events", "Measurement name.")
+	flag.StringVar(&settings.annotationTitle, "t", "", "Annotation title.")
+	flag.StringVar(&settings.annotationDescr, "d", "", "Annotation description.")
+	flag.StringVar(&settings.annotationTags, "a", "", "Snnotation tags.")
+	flag.StringVar(&settings.tags, "T", "", "InfluxDB tags.")
 	flag.BoolVar(&printVersion, "v", false, "Print usage information then exit.")
 	flag.Usage = func() { usage(0) }
 	flag.Parse()
@@ -116,8 +122,17 @@ func main() {
 		usage(1)
 	}
 
+	if (settings.username != "" && settings.password == "") || (settings.username == "" && settings.password != "") {
+		fmt.Printf("error: You must specify a username and password\n\n")
+		usage(1)
+	}
+
 	// Connect
 	dbconnConfig := client.HTTPConfig{Addr: settings.host}
+	if len(settings.username) > 0 {
+		dbconnConfig.Username = settings.username
+		dbconnConfig.Password = settings.password
+	}
 	dbconn, err := client.NewHTTPClient(dbconnConfig)
 	if err != nil {
 		log.Fatal(err)
