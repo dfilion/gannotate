@@ -7,14 +7,16 @@ to InfluxDB for use with Grafana.
 
 ```
 Usage of gannotate:
-        -D string       InfluxDB database name. Default: annotations
-        -H string       InfluxDB server URL. Default: http://localhost:8086
-        -T string       Comma separated list of key=value InfluxDB tags.
-        -M string       InfluxDb measurement name. Default: events
-        -a tags         Comma separated list of annotation tags. Saved to the tags field.
-        -d descr        Annotation description. Saved to the descr field.
-        -t title        Annotation title. Saved to the title field.
-        -v              Print version information then exit.
+        -D string   InfluxDB database name. Default: annotations
+        -H string   InfluxDB server URL.Default: http://localhost:8086
+        -U username User name to authenticate with.
+        -P password Username's password.
+        -T string   Comma separated list of key=value InfluxDB tags.
+        -M string   InfluxDb measurement name. Default: events
+        -a tags     Comma separated list of annotation tags. Saved to the tags field.
+        -d descr    Annotation description. Saved to the descr field.
+        -t title    Annotation title. Saved to the title field.
+        -v          Print version information then exit.
 ```
 
 -a, -d and -t do not have defaults so they are required.
