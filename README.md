@@ -118,6 +118,18 @@ time                descr  host             tags        title
 1507423577000000000 aDesc2 host2.domain.com aTag3,aTag4 aTitle2
 
 
+## Common error messages
+
+### `2017/10/09 16:02:59 unable to parse authentication credentials`
+
+The InfluxDB server uses authentication and none was provided.
+Call `gannotate` with the `-U` and `-P` options.
+
+### `2017/10/09 16:03:22 authorization failed`
+
+The InfluxDB server uses authentication and the provided username
+and/or password were incorrect.  
+
 ## Grafana
 
 Grafana cannot display InfluxDB tags in annotations.  Instead it looks for
