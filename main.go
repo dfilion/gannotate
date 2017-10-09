@@ -17,6 +17,9 @@ var (
 
 	// Build number. Set in Makefile.
 	Build string
+
+	// Configuration settings.
+	settings Settings
 )
 
 // Settings is a structure containing the values passed as commandline parameters.
@@ -69,6 +72,7 @@ func parseInfluxdbTags(tags string) (map[string]string, error) {
 	return kv, nil
 }
 
+// Print usage information.
 func usage(exitCode int) {
 	fmt.Println(`Usage of gannotate:
 	-D string   InfluxDB database name. Default: annotations
@@ -87,13 +91,13 @@ func usage(exitCode int) {
 	os.Exit(exitCode)
 }
 
+// Print version and build information.
 func printVersionInfo() {
 	fmt.Printf("Version: %s\tBuild: %s\n", Version, Build)
 }
 
-func main() {
-
-	var settings Settings
+// parseFlags parses the command line arguments populating the Settings structure.
+func parseFlags() {
 	var printVersion bool
 
 	flag.StringVar(&settings.host, "H", "http://localhost:8086", "InfluxDB URL.")
@@ -126,6 +130,11 @@ func main() {
 		fmt.Printf("error: You must specify a username and password\n\n")
 		usage(1)
 	}
+}
+
+func main() {
+
+	parseFlags()
 
 	// Connect
 	dbconnConfig := client.HTTPConfig{Addr: settings.host}
