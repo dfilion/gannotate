@@ -3,44 +3,51 @@
 `gannotate` is a command line tool written in Go for sending annotations
 to InfluxDB for use with Grafana.
 
+
 ## Usage Summary
 
 ```
 Usage of gannotate:
-        -D string   InfluxDB database name. Default: annotations
-        -H string   InfluxDB server URL.Default: http://localhost:8086
-        -U username User name to authenticate with.
-        -P password Username's password.
-        -T string   Comma separated list of key=value InfluxDB tags.
-        -M string   InfluxDb measurement name. Default: events
-        -a tags     Comma separated list of annotation tags. Saved to the tags field.
-        -d descr    Annotation description. Saved to the descr field.
-        -t title    Annotation title. Saved to the title field.
-        -v          Print version information then exit.
+        -D dbname    InfluxDB database name. Default: annotations
+        -H URL       InfluxDB server URL.Default: http://localhost:8086
+        -U username  User name to authenticate with.
+        -P password  Username's password.
+        -T KVpairs   Comma separated list of key=value InfluxDB tags.
+        -M name      InfluxDb measurement name. Default: events
+        -a tags      Comma separated list of annotation tags. Saved to the tags field.
+        -d descr     Annotation description. Saved to the descr field.
+        -t title     Annotation title. Saved to the title field.
+        -v           Print version information then exit.
 ```
 
 -a, -d and -t do not have defaults so they are required.
 
+
 ### Arguments
 
-#### `-D string`
+#### `-D dbname`
 Specify the InfluxDB database name.
 Default: `annotations`
 
-#### `-H string`
+#### `-H URL`
 Specify the InfluxDB server URL.
 Default: `http://localhost:8086`
 
-#### `-M string`
-InfluxDb measurement name used to record the annotation.
-Default: events
+#### `-U username`
+Optional InfluxDB user name to authenticate with.
 
-#### `-T string`
+#### `-P password`
+Optional InfluxDB password for `username`.
+
+##### Note: `gannotate` will not prompt for a password.  This will change in a future release.
+
+#### `-T KVpairs`
 Specify a comma separated list of key=value pairs to be used as InfluxDB tags.
 Optional. No default.
 
-#### `-t title`
-Annotation title. Saved to the `title` field.
+#### `-M name`
+InfluxDb measurement name used to record the annotation.
+Default: events
 
 #### `-a tags`
 Comma separated list of key=value pairs used in the Grafana annotation tags.
@@ -49,6 +56,9 @@ Saved to the `tags` field.
 #### `-d descr`
 Description to be used the Grafana annotation description.
 Saved to the `descr` field.
+
+#### `-t title`
+Annotation title. Saved to the `title` field.
 
 #### `-v`
 Print the applications version information and exit.
@@ -132,17 +142,33 @@ Call `gannotate` with the `-U` and `-P` options.
 The InfluxDB server uses authentication and the provided username
 and/or password were incorrect.  
 
+
 ## Grafana
 
 Grafana cannot display InfluxDB tags in annotations.  Instead it looks for
 tags in a dedicated field in a comma separated format.  This is why
-`gannotate` puts the annotation tags in a field.
+`gannotate` puts the annotation tags in a dedicated field.
 
 The following example is a query to retrieve all the annotations from InfluxDB.
 
 ```
-SELECT title, descr, tags from events WHERE $timeFilter order by asc
+SELECT title, descr, tags from events WHERE $timeFilter order by time asc
 ```
+
+### Combining templates and annotations
+
+#### Template
+Select a list of host names from the `system` measurement.  In this example the 
+host name is stored in a tag, not a field.
+
+* Name: $host
+* Query: `show tag values from "system" with key = "host"`
+
+#### Annotation
+Here we search for annotations based on the `$host` template above and the `$timeFilter`
+provided by Grafana.
+
+* Query: `SELECT title,tags,descr FROM events WHERE host =~ /^$host$/ AND $timeFilter order by time asc`
 
 
 ## Development
@@ -151,9 +177,11 @@ SELECT title, descr, tags from events WHERE $timeFilter order by asc
 
 You can use the Makefile or the standard `go get; go install` combination.
 
-Go versions 1.8.x and 1.9.x has both been successfully used to build `gannotate`.
+Go versions 1.7.x, 1.8.x and 1.9.x has both been successfully used to build `gannotate`.
 
 ### Dependencies
 
 Requires the InfluxDB Client V2 available at `github.com/influxdata/influxdb/client/v2`.
+
+You may use `go get` to download the dependencies for you.
 
