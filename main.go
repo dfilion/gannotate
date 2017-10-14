@@ -132,17 +132,15 @@ func parseFlags() {
 	}
 }
 
-
 func init() {
 	if Version == "" {
 		Version = "Unknown"
 	}
 
 	if Build == "" {
-		Build == "Unknown"
+		Build = "Unknown"
 	}
 }
-
 
 func main() {
 
