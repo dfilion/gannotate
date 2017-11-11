@@ -58,10 +58,10 @@ func dbExists(c client.Client, name string) (result bool, err error) {
 // parses them into a map that it returns.
 func parseInfluxdbTags(tags string) (map[string]string, error) {
 
-	var kv map[string]string
+	//var kv map[string]string
 
 	// Initialize the map length bases on the number of key/value pairs
-	kv = make(map[string]string, len(strings.Split(tags, ",")))
+	kv := make(map[string]string, len(strings.Split(tags, ",")))
 
 	for _, val := range strings.Split(tags, ",") {
 		parts := strings.Split(val, "=")
@@ -160,6 +160,9 @@ func main() {
 
 	// Create the DB if needed
 	exists, err := dbExists(dbconn, settings.db)
+	if err != nil {
+		log.Fatal(err)
+	}
 	if !exists {
 		qry := client.NewQuery(fmt.Sprintf("CREATE DATABASE %s", settings.db), "", "")
 		resp, err := dbconn.Query(qry)
@@ -183,6 +186,9 @@ func main() {
 
 	// Create a data Point
 	tags, err := parseInfluxdbTags(settings.tags)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	fields := map[string]interface{}{
 		"title": settings.annotationTitle,
