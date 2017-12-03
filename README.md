@@ -1,64 +1,68 @@
 # gannotate
 
-`gannotate` is a command line tool written in Go for sending annotations
-to InfluxDB for use with Grafana.
+`gannotate` is a command line tool for sending Granafa annotations to InfluxDB for storage.
 
 
 ## Usage Summary
 
 ```
 Usage of gannotate:
-        -D dbname    InfluxDB database name. Default: annotations
-        -H URL       InfluxDB server URL.Default: http://localhost:8086
-        -U username  User name to authenticate with.
-        -P password  Username's password.
-        -T KVpairs   Comma separated list of key=value InfluxDB tags.
-        -M name      InfluxDb measurement name. Default: events
-        -a tags      Comma separated list of annotation tags. Saved to the tags field.
-        -d descr     Annotation description. Saved to the descr field.
-        -t title     Annotation title. Saved to the title field.
+        -D dbname    InfluxDB database name.
+        -H URL       InfluxDB server URL.
+        -U username  InfluxDB user name.
+        -P password  InfluxDB user password.
+        -T tags      InfluxDB tags.
+        -M name      InfluxDB measurement name.
+        -a tags      Annotation tags.
+        -d descr     Annotation description.
+        -t title     Annotation title.
         -v           Print version information then exit.
+
+        -a, -d and -t are required.
 ```
 
--a, -d and -t do not have defaults so they are required.
-
+It is not currently possible to specify the annotation's timestamp.
+The sending host's time is currently used.
 
 ### Arguments
 
 #### `-D dbname`
-Specify the InfluxDB database name.
+InfluxDB database name.
 Default: `annotations`
 
 #### `-H URL`
-Specify the InfluxDB server URL.
+InfluxDB server URL.
 Default: `http://localhost:8086`
 
 #### `-U username`
-Optional InfluxDB user name to authenticate with.
+InfluxDB user name.
+Optional.
 
 #### `-P password`
-Optional InfluxDB password for `username`.
+InfluxDB password for `username`.
+Optional.
 
-##### Note: `gannotate` will not prompt for a password.  This will change in a future release.
+##### Note: `gannotate` does not prompt for a password.
 
-#### `-T KVpairs`
-Specify a comma separated list of key=value pairs to be used as InfluxDB tags.
+#### `-T tags`
+Comma separated list of key=value pairs used as InfluxDB tags.
 Optional. No default.
 
 #### `-M name`
-InfluxDb measurement name used to record the annotation.
+Measurement name used to record the annotations.
 Default: events
 
 #### `-a tags`
-Comma separated list of key=value pairs used in the Grafana annotation tags.
+Comma separated list of key=value pairs used as Grafana annotation tags.
 Saved to the `tags` field.
 
 #### `-d descr`
-Description to be used the Grafana annotation description.
+String used as the Grafana annotation description.
 Saved to the `descr` field.
 
 #### `-t title`
-Annotation title. Saved to the `title` field.
+String used as the Grafana annotation title. 
+Saved to the `title` field.
 
 #### `-v`
 Print the applications version information and exit.
@@ -68,10 +72,10 @@ Print the applications version information and exit.
 
 ### Create an annotation using the default InfluxDB settings.
 ```
-gannotate -t aTitle1 -d aDesc1 -a aTag1,aTag2
+gannotate -t MyTitle -d MyDescription -a Tag1,Tag2
 ```
 
-What gets created.
+#### What gets created
 ```
 > show databases;
 name: databases
@@ -92,42 +96,44 @@ events
 
 > select * from events;
 name: events
-time                descr  tags        title
-----                -----  ----        -----
-1507423169000000000 aDesc1 aTag1,aTag2 aTitle1
+time                descr              tags        title
+----                -----              ----        -----
+1512337131000000000 MyDescription      Tag1,Tag2   MyTitle
 
 ```
 
-As you can see, the annotations database was created, the events measurement
-created and an entry created with our values.  Remember that `tags` is a field
-and not InfluxDB tags.
+This shows the `annotations` database along with the `events` measurement were
+created and an entry inserted with our values.  Remember that `tags` is a field
+and not an InfluxDB tag.
 
 
 ### Create an entry that includes InfluxDB tags
 
-This example includes an InfluxDB tag along with the other information.
+A example that includes the host name as an InfluxDB tag for later searching or filtering.
 
 ```
-gannotate -t aTitle2 -d aDesc2 -a aTag3,aTag4 -T host=host2.domain.com
+gannotate -t GTitle -d GDesc -a GTag1,GTag2 -T host=host2.domain.com
 ```
 
-The results.
+Searching the events measurment we find our new entry along with the new InfluxDB tag.
 ```
 > select * from events;
 name: events
-time                descr  host             tags        title
-----                -----  ----             ----        -----
-1507423169000000000 aDesc1                  aTag1,aTag2 aTitle1
-1507423577000000000 aDesc2 host2.domain.com aTag3,aTag4 aTitle2
+
+time                descr         host             tags        title
+----                -----         ----             ----        -----
+1512337131000000000 MyDescription                  Tag1,Tag2   MyTitle
+1512338133000000000 GDesc         host2.domain.com GTag1,GTag2 GTitle
 ```
 
-We can use the InfluxDB tag we created to filter our annotations.
-
+We can use the InfluxDB tag to filter our annotations.
+```
 > select * from events where host='host2.domain.com'
 name: events
-time                descr  host             tags        title
-----                -----  ----             ----        -----
-1507423577000000000 aDesc2 host2.domain.com aTag3,aTag4 aTitle2
+time                descr         host             tags        title
+----                -----         ----             ----        -----
+1512338133000000000 GDesc         host2.domain.com GTag1,GTag2 GTitle
+```
 
 
 ## Common error messages
@@ -143,11 +149,11 @@ The InfluxDB server uses authentication and the provided username
 and/or password were incorrect.  
 
 
-## Grafana
+## Configuring Grafana
 
 Grafana cannot display InfluxDB tags in annotations.  Instead it looks for
 tags in a dedicated field in a comma separated format.  This is why
-`gannotate` puts the annotation tags in a dedicated field.
+`gannotate` has separate options for InfluxDB tags and annotation tags.
 
 The following example is a query to retrieve all the annotations from InfluxDB.
 
@@ -155,21 +161,32 @@ The following example is a query to retrieve all the annotations from InfluxDB.
 SELECT title, descr, tags from events WHERE $timeFilter order by time asc
 ```
 
+#### Note
+Recent Grafana versions do not allow mapping of the `title` field, it is expected to exist.
+You must still map the `tags` and `Text` fields.
+
+
 ### Combining templates and annotations
 
-#### Template
-Select a list of host names from the `system` measurement.  In this example the 
-host name is stored in a tag, not a field.
+You can use Grafana templates to filter which annotations are selected.
+The following example is based on annotations having been created with the
+source host name as an InfluxDB tag.
 
-* Name: $host
-* Query: `show tag values from "system" with key = "host"`
+#### Configuring the template
 
-#### Annotation
-Here we search for annotations based on the `$host` template above and the `$timeFilter`
-provided by Grafana.
+Create a Grafana template named `host` which uses the `host` tag key from the `events` measurement. 
 
-* Query: `SELECT title,tags,descr FROM events WHERE host =~ /^$host$/ AND $timeFilter order by time asc`
+```
+show tag values from events with key = "host"
+```
 
+#### Configuring the annotations
+
+Create an annotation that uses the InfluxDB `annotations` database with the following query.
+
+```
+SELECT title, descr, tags from events WHERE $timeFilter AND host =~ /$host$/ order by time asc
+```
 
 ## Development
 
