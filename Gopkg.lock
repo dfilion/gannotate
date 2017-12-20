@@ -2,6 +2,12 @@
 
 
 [[projects]]
+  branch = "master"
+  name = "github.com/araddon/dateparse"
+  packages = ["."]
+  revision = "626fadf64d2a5b300fe00da84d09e25e7f19424e"
+
+[[projects]]
   name = "github.com/influxdata/influxdb"
   packages = ["client/v2","models","pkg/escape"]
   revision = "2d474a3089bcfce6b472779be9470a1f0ef3d5e4"
@@ -10,6 +16,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "90fc8d449596e333ca8849dbe141f38c5e46d446853e5eed5a26e2dacef8b780"
+  inputs-digest = "2da722c6a348bb6509af2b56562a3ed2b33f5e996c2e0b508f28b6b9c709f941"
   solver-name = "gps-cdcl"
   solver-version = 1
