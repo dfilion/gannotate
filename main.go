@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+//	"github.com/araddon/dateparse"
 	"github.com/influxdata/influxdb/client/v2"
 )
 
@@ -33,6 +34,7 @@ type Settings struct {
 	annotationTitle string // Annotation title
 	annotationDescr string // Annotation description
 	annotationTags  string // Annotation tags
+	timestamp       string // Annotation timestamp
 }
 
 // dbExists returns a boolean indicating if the name exists.
@@ -79,6 +81,7 @@ func usage(exitCode int) {
 	-H string   InfluxDB server URL.Default: http://localhost:8086
 	-U username User name to authenticate with.
 	-P password Username's password.
+	-S timestamp
 	-T string   Comma separated list of key=value InfluxDB tags.
 	-M string   InfluxDb measurement name. Default: events
 	-a tags	    Comma separated list of annotation tags. Saved to the tags field.
@@ -100,10 +103,13 @@ func printVersionInfo() {
 func parseFlags() {
 	var printVersion bool
 
+	now := time.Now()
+
 	flag.StringVar(&settings.host, "H", "http://localhost:8086", "InfluxDB URL.")
 	flag.StringVar(&settings.db, "D", "annotations", "Database name.")
 	flag.StringVar(&settings.username, "U", "", "Username.")
 	flag.StringVar(&settings.password, "P", "", "Password.")
+	flag.StringVar(&settings.timestamp, "S", fmt.Sprintf("%s", now.Local()), "Timestamp.")
 	flag.StringVar(&settings.measurement, "M", "events", "Measurement name.")
 	flag.StringVar(&settings.annotationTitle, "t", "", "Annotation title.")
 	flag.StringVar(&settings.annotationDescr, "d", "", "Annotation description.")
@@ -130,6 +136,7 @@ func parseFlags() {
 		fmt.Printf("error: You must specify a username and password\n\n")
 		usage(1)
 	}
+
 }
 
 func init() {
@@ -145,6 +152,9 @@ func init() {
 func main() {
 
 	parseFlags()
+
+	fmt.Printf("%v\n", settings)
+	os.Exit(0)
 
 	// Connect
 	dbconnConfig := client.HTTPConfig{Addr: settings.host}
