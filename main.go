@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-//	"github.com/araddon/dateparse"
+	"github.com/araddon/dateparse"
 	"github.com/influxdata/influxdb/client/v2"
 )
 
@@ -25,16 +25,16 @@ var (
 
 // Settings is a structure containing the values passed as commandline parameters.
 type Settings struct {
-	host            string // InfluxDB Host
-	db              string // Database to write to
-	username        string // InfluxDB user
-	password        string // InfluxDB user's password
-	measurement     string // Measurement name to write to
-	tags            string // InfluxDB tags
-	annotationTitle string // Annotation title
-	annotationDescr string // Annotation description
-	annotationTags  string // Annotation tags
-	timestamp       string // Annotation timestamp
+	host            string    // InfluxDB Host
+	db              string    // Database to write to
+	username        string    // InfluxDB user
+	password        string    // InfluxDB user's password
+	measurement     string    // Measurement name to write to
+	tags            string    // InfluxDB tags
+	annotationTitle string    // Annotation title
+	annotationDescr string    // Annotation description
+	annotationTags  string    // Annotation tags
+	timestamp       time.Time // Annotation timestamp
 }
 
 // dbExists returns a boolean indicating if the name exists.
@@ -77,17 +77,17 @@ func parseInfluxdbTags(tags string) (map[string]string, error) {
 // Print usage information.
 func usage(exitCode int) {
 	fmt.Println(`Usage of gannotate:
-	-D string   InfluxDB database name. Default: annotations
-	-H string   InfluxDB server URL.Default: http://localhost:8086
-	-U username User name to authenticate with.
-	-P password Username's password.
-	-S timestamp
-	-T string   Comma separated list of key=value InfluxDB tags.
-	-M string   InfluxDb measurement name. Default: events
-	-a tags	    Comma separated list of annotation tags. Saved to the tags field.
-	-d descr    Annotation description. Saved to the descr field.
-	-t title    Annotation title. Saved to the title field.
-	-v          Print version information then exit.
+	-D string       InfluxDB database name. Default: annotations
+	-H string       InfluxDB server URL.Default: http://localhost:8086
+	-U username     User name to authenticate with.
+	-P password     Username's password.
+	-S timestamp    InfluxDB timestamp.
+	-T string       Comma separated list of key=value InfluxDB tags.
+	-M string       InfluxDb measurement name. Default: events
+	-a tags	        Comma separated list of annotation tags. Saved to the tags field.
+	-d descr        Annotation description. Saved to the descr field.
+	-t title        Annotation title. Saved to the title field.
+	-v              Print version information then exit.
 	`)
 	//fmt.Printf("Version: %s\tBuild: %s\n", Version, Build)
 	printVersionInfo()
@@ -102,6 +102,7 @@ func printVersionInfo() {
 // parseFlags parses the command line arguments populating the Settings structure.
 func parseFlags() {
 	var printVersion bool
+	var timearg string
 
 	now := time.Now()
 
@@ -109,7 +110,7 @@ func parseFlags() {
 	flag.StringVar(&settings.db, "D", "annotations", "Database name.")
 	flag.StringVar(&settings.username, "U", "", "Username.")
 	flag.StringVar(&settings.password, "P", "", "Password.")
-	flag.StringVar(&settings.timestamp, "S", fmt.Sprintf("%s", now.Local()), "Timestamp.")
+	flag.StringVar(&timearg, "S", fmt.Sprintf("%s", now.Local()), "Timestamp.")
 	flag.StringVar(&settings.measurement, "M", "events", "Measurement name.")
 	flag.StringVar(&settings.annotationTitle, "t", "", "Annotation title.")
 	flag.StringVar(&settings.annotationDescr, "d", "", "Annotation description.")
@@ -137,6 +138,13 @@ func parseFlags() {
 		usage(1)
 	}
 
+	if timestamp, err := dateparse.ParseAny(timearg); err != nil {
+		fmt.Printf("error: could not parse %s as a date\n", timearg)
+		usage(1)
+	} else {
+		settings.timestamp = timestamp
+	}
+
 }
 
 func init() {
@@ -152,9 +160,6 @@ func init() {
 func main() {
 
 	parseFlags()
-
-	fmt.Printf("%v\n", settings)
-	os.Exit(0)
 
 	// Connect
 	dbconnConfig := client.HTTPConfig{Addr: settings.host}
@@ -206,7 +211,7 @@ func main() {
 		"tags":  settings.annotationTags,
 	}
 
-	pt, err := client.NewPoint(settings.measurement, tags, fields, time.Now())
+	pt, err := client.NewPoint(settings.measurement, tags, fields, settings.timestamp)
 	if err != nil {
 		log.Fatal(err)
 	}
