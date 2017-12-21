@@ -11,6 +11,7 @@ Usage of gannotate:
         -H URL       InfluxDB server URL.
         -U username  InfluxDB user name.
         -P password  InfluxDB user password.
+        -S timestamp InfluxDB timestamp.
         -T tags      InfluxDB tags.
         -M name      InfluxDB measurement name.
         -a tags      Annotation tags.
@@ -46,6 +47,14 @@ InfluxDB password for `username`.
 Optional. No default value.
 
 `gannotate` does not currently support prompting for a password.
+
+#### `-S timestamp`
+Timestamp to apply to the annotation.
+Optional.  Defaults to the current date and time.
+
+Make sure to put the timestamp in quotes or it will not be read properly.
+
+See [https://github.com/araddon/dateparse](https://github.com/araddon/dateparse) for examples of the supported format.
 
 #### `-T tags`
 Comma separated list of key=value pairs used as InfluxDB tags.
@@ -138,6 +147,14 @@ name: events
 time                descr         host             tags        title
 ----                -----         ----             ----        -----
 1512338133000000000 GDesc         host2.domain.com GTag1,GTag2 GTitle
+```
+
+### Specifying a timestamp
+
+Put the timestamp in quotes or it will not be read properly.
+
+```
+gannotate -t GTitle -d GDesc -a GTag1,GTag2 -T host=host2.domain.com -S "Fri Dec 1 17:41:30 EST 2017"
 ```
 
 
